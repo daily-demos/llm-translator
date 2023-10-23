@@ -1,0 +1,191 @@
+<html>
+  <head>
+    <title>Daily.co Call Object Demo</title>
+    <script src="https://unpkg.com/@daily-co/daily-js"></script>
+  </head>
+  <body onload="main()">
+    <div id="controls">
+      <button id="join" onclick="joinRoom()">Join Room</button>
+      <button id="leave" onclick="leaveRoom()">Leave Room</button>
+      <span>Language:</span>
+      <select id="language" onChange="changeLanguage()">
+        <option value="english" selected>English</option>
+      </select>
+    </div>
+    <div id="videos"></div>
+    <div id="audios"></div>
+    <script>
+      const languageSelect = document.getElementById("language");
+
+      function cap(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+      }
+
+      function isTranslator(p) {
+        return p.user_name.match(/^tb\-.*/);
+      }
+
+      function translatorLanguage(p) {
+        return p.user_name.match(/^tb\-(.*)/)[1];
+      }
+
+      function showSubtitle(paxId, message) {
+        const subtitleDiv = document.getElementById("subtitles-" + paxId);
+        const p = document.createElement("p");
+        p.innerHTML = message;
+        subtitleDiv.appendChild(p);
+        setTimeout(() => {
+          p.remove();
+        }, 5000);
+      }
+
+      async function main() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const domain = urlParams.get("domain") || "chad-hq";
+        const room = urlParams.get("room") || "sfu";
+
+        const ROOM_URL = `https://${domain}.daily.co/${room}`;
+        //const ROOM_URL="https://preview-9024.staging.daily.co/raw-tracks?domain=chad-hq&bypassRegionDetection=true"
+        window.call = DailyIframe.createCallObject({
+          url: ROOM_URL,
+          //startAudioOff: true,
+          //startVideoOff: true,
+          subscribeToTracksAutomatically: false,
+          audioSource: false,
+          videoSource: false,
+          dailyConfig: {},
+        });
+
+        [
+          "participant-updated",
+          "participant-left",
+          "error",
+          "camera-error",
+          "started-camera",
+          "active-speaker-change",
+          "recording-started",
+          "recording-stopped",
+          "recording-error",
+          "track-started",
+          "track-stopped",
+        ].forEach((e) => {
+          call.on(e, (ev) => {
+            console.log(`🔥 ${e}:`, ev);
+          });
+        });
+
+        call.on("track-started", startTrack);
+        call.on("track-stopped", stopTrack);
+
+        call.on("participant-joined", (ev) => {
+          console.log("🤠 Participant joined: ", ev);
+          const p = ev.participant;
+          // is this a person or a translator bot?
+          if (isTranslator(p)) {
+            // This is a translator. Update the list of languages
+            // to include this translator's language
+            console.log("this is a translator");
+            const lang = translatorLanguage(p);
+            const newOpt = document.createElement("option");
+            newOpt.value = lang;
+            newOpt.text = cap(lang);
+            languageSelect.appendChild(newOpt);
+          } else {
+            // This is a human. Subscribe to their video, and their
+            // audio if the current language is English
+            console.log("this is a human");
+            console.log(languageSelect.value);
+            const audioSub = languageSelect.value === "english";
+            call.updateParticipant(p["session_id"], {
+              setSubscribedTracks: {
+                video: true,
+                audio: audioSub,
+              },
+            });
+          }
+        });
+
+        call.on("app-message", (e) => {
+          console.log("Got app message: ", e);
+          const lang = languageSelect.value;
+          if (e.fromId === "transcription" && lang === "english") {
+            console.log("got it for english: ", e.data.text);
+            showSubtitle(e.data.session_id, e.data.text);
+          } else if (e.data.translation_language === lang) {
+            console.log("got it for non-english: ", e.data.translation);
+            showSubtitle(e.data.session_id, e.data.translation);
+          }
+          e.fromId;
+        });
+      }
+
+      function startTrack(evt) {
+        console.log("track started: ", evt);
+        if (evt.track.kind === "audio" && !evt.participant.local) {
+          let audiosDiv = document.getElementById("audios");
+          let audioEl = document.createElement("audio");
+          audiosDiv.appendChild(audioEl);
+          audioEl.style.width = "100%";
+          audioEl.srcObject = new MediaStream([evt.track]);
+          audioEl.play();
+        } else if (evt.track.kind === "video") {
+          let pid = evt.participant.session_id;
+          console.log({ pid });
+          let videosDiv = document.getElementById("videos");
+          let paxDiv = document.createElement("div");
+          paxDiv.id = "pax-" + pid;
+          let videoEl = document.createElement("video");
+          let subtitleDiv = document.createElement("div");
+          subtitleDiv.id = "subtitles-" + pid;
+          paxDiv.appendChild(videoEl);
+          paxDiv.appendChild(subtitleDiv);
+          videosDiv.appendChild(paxDiv);
+          paxDiv.style.width = "50%";
+          videoEl.style.width = "100%";
+          videoEl.srcObject = new MediaStream([evt.track]);
+          videoEl.play();
+        }
+      }
+
+      function stopTrack(evt) {
+        let vids = document.getElementsByTagName("video");
+        for (let vid of vids) {
+          if (
+            vid.srcObject &&
+            vid.srcObject.getVideoTracks()[0] === evt.track
+          ) {
+            vid.remove();
+          }
+        }
+      }
+
+      async function changeLanguage() {
+        const lang = languageSelect.value;
+        console.log("changing language to: ", lang);
+        let allPax = call.participants();
+        let paxIds = Object.keys(allPax).filter((p) => p !== "local");
+        paxIds.forEach((id) => {
+          const p = allPax[id];
+          const wantsAudio =
+            (isTranslator(p) && translatorLanguage(p) === lang) ||
+            (!isTranslator(p) && lang === "english");
+          call.updateParticipant(id, {
+            setSubscribedTracks: { audio: wantsAudio },
+          });
+        });
+      }
+
+      async function joinRoom() {
+        await call.join({});
+      }
+
+      async function leaveRoom() {
+        let vids = document.getElementsByTagName("video");
+        for (let vid of vids) {
+          vid.remove();
+        }
+        await call.leave();
+      }
+    </script>
+  </body>
+</html>

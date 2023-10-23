@@ -19,12 +19,19 @@ class AzureAIService(AIService):
         # self.speech_config.speech_synthesis_voice_name='en-US-JennyMultilingualV2Neural'
 
         self.speech_synthesizer = SpeechSynthesizer(speech_config=self.speech_config, audio_config=None)
+        
+        self.languages = {
+            "french": {"lang": "fr-FR", "voice": "fr-FR-HenriNeural"},
+            "spanish": {"lang": "es-MX", "voice": "es-MX-JorgeNeural"}
+        }
 
-    def run_tts(self, sentence):
+    def run_tts(self, sentence, language):
         print("⌨️ running azure tts async")
-        ssml = "<speak version='1.0' xml:lang='fr-FR' xmlns='http://www.w3.org/2001/10/synthesis' " \
+        voice = self.languages[language]['voice']
+        lang = self.languages[language]['lang']
+        ssml = f"<speak version='1.0' xml:lang='{lang}' xmlns='http://www.w3.org/2001/10/synthesis' " \
            "xmlns:mstts='http://www.w3.org/2001/mstts'>" \
-           "<voice name='fr-FR-HenriNeural'>" \
+           f"<voice name='{voice}'>" \
            "<mstts:silence type='Sentenceboundary' value='20ms' />" \
            "<mstts:express-as style='lyrical' styledegree='2' role='SeniorFemale'>" \
            "<prosody rate='1.05'>" \

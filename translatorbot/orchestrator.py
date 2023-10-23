@@ -19,7 +19,7 @@ from scenes.start_listening_scene import StartListeningScene
 from threading import Thread
 
 class Orchestrator():
-    def __init__(self, image_setter, microphone, ai_tts_service, ai_image_gen_service, ai_llm_service, story_id):
+    def __init__(self, image_setter, microphone, ai_tts_service, ai_image_gen_service, ai_llm_service, story_id, language):
         self.image_setter = image_setter
         self.microphone = microphone
 
@@ -28,11 +28,13 @@ class Orchestrator():
         self.ai_llm_service = ai_llm_service
 
         self.search_indexer = SearchIndexer(story_id)
+        
+        self.language = language
 
         self.tts_getter = None
         self.image_getter = None
 
-        self.messages = [{"role": "system", "content": "You will be provided with a sentence in English, and your task is to translate it into French."}]
+        self.messages = [{"role": "system", "content": f"You will be provided with a sentence in English, and your task is to translate it into {self.language.capitalize()}."}]
 
         self.llm_response_thread = None
 
@@ -63,7 +65,7 @@ class Orchestrator():
 
     def request_llm_response(self, message):
         try:
-            msgs = [{"role": "system", "content": "You will be provided with a sentence in English, and your task is to translate it into French."}, {"role": "user", "content": message['text']}]
+            msgs = [{"role": "system", "content": f"You will be provided with a sentence in English, and your task is to translate it into {self.language.capitalize()}."}, {"role": "user", "content": message['text']}]
             message['response'] = self.ai_llm_service.run_llm(msgs)
             self.handle_translation(message)
         except Exception as e:
@@ -82,6 +84,7 @@ class Orchestrator():
                     out += next_chunk
         #sentence = self.ai_tts_service.run_tts(out)
         message['translation'] = out
+        message['translation_language'] = self.language
         self.enqueue(StoryGrandmaScene, message=message)
 
     def handle_llm_response(self, llm_response):
@@ -163,9 +166,9 @@ class Orchestrator():
         self.tts_getter.join()
         self.image_getter.join()
 
-    def request_tts(self, text):
+    def request_tts(self, text, language):
         try:
-            audio = self.ai_tts_service.run_tts(text)
+            audio = self.ai_tts_service.run_tts(text, language)
             return audio
         except Exception as e:
             print(f"Exception in request_tts: {e}")

@@ -24,18 +24,19 @@ class DailyLLM(EventHandler):
             room_url=os.getenv("DAILY_URL"),
             token=os.getenv('DAILY_TOKEN'),
             bot_name="Translator",
-            image_style="watercolor illustrated children's book", # keep the generated images to a certain theme, like "golden age of illustration," "talented kid's crayon drawing", etc.
+            language="french", # keep the generated images to a certain theme, like "golden age of illustration," "talented kid's crayon drawing", etc.
         ):
 
         # room + bot details
         self.room_url = room_url
+        self.language = language
         room_name = get_room_name(room_url)
         if token:
             self.token = token
         else:
             self.token = get_meeting_token(room_name, os.getenv("DAILY_API_KEY"))
-        self.bot_name = bot_name
-        self.image_style = image_style
+        # hard-coding this for now so clients can find translators
+        self.bot_name = f"tb-{self.language}"
 
         duration = os.getenv("BOT_MAX_DURATION")
         if not duration:
@@ -68,7 +69,7 @@ class DailyLLM(EventHandler):
         self.camera_thread.start()
 
         self.print_debug("starting orchestrator")
-        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id)
+        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id, self.language)
         self.orchestrator.action()
 
         self.participant_left = False
@@ -109,7 +110,6 @@ class DailyLLM(EventHandler):
         self.speaker = Daily.create_speaker_device("speaker", sample_rate = 16000, channels = 1)
         self.camera = Daily.create_camera_device("camera", width = 512, height = 512, color_format="RGB")
 
-        self.image_gen.set_image_style(self.image_style)
 
         Daily.select_speaker_device("speaker")
 
@@ -132,6 +132,8 @@ class DailyLLM(EventHandler):
         })
 
         self.my_participant_id = self.client.participants()['local']['id']
+        # Update meeting info to indicate that I'm the translator for my language
+        
 
     def call_joined(self, join_data, client_error):
         self.print_debug(f"call_joined: {join_data}, {client_error}")
@@ -204,12 +206,14 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--url", type=str, help="URL of the Daily room")
     parser.add_argument("-t", "--token", type=str, help="Token for Daily API")
     parser.add_argument("-b", "--bot-name", type=str, help="Name of the bot")
+    parser.add_argument("-l", "--language", type=str, help="Language. Try 'french', 'spanish', 'japanese'")
 
     args = parser.parse_args()
 
     url = args.url or os.getenv("DAILY_URL")
     bot_name = args.bot_name or "Storybot"
     token = args.token or None
+    language = args.language or "french"
 
     #app = DailyLLM(url, token, bot_name)
-    app = DailyLLM(os.getenv("DAILY_URL"), os.getenv("DAILY_TOKEN"), "Translatorbot")
+    app = DailyLLM(os.getenv("DAILY_URL"), os.getenv("DAILY_TOKEN"), "Translatorbot", language)

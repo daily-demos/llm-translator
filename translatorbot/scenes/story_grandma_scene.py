@@ -6,6 +6,7 @@ class StoryGrandmaScene(Scene):
 		print("StoryPageScene init")
 		self.message = kwargs.get('message', None)
 		self.sentence = self.message['translation']
+		
 		super().__init__(**kwargs)
 		
 	def prepare(self):
@@ -13,12 +14,12 @@ class StoryGrandmaScene(Scene):
 		# don't need threads here because image
 		# is effectively instant
 		#self.scene_data['image'] = (self.grandma_writing)
-		self.scene_data['audio'] = self.orchestrator.request_tts(self.sentence)
-		print(f"👩‍💼 StoryStartScene prepare complete for: {self.sentence}")
+		self.scene_data['audio'] = self.orchestrator.request_tts(self.sentence, self.message['translation_language'])
+		print(f"👩‍💼 StoryStartScene prepare complete for: {self.sentence} in {self.message['translation_language']}")
 		
 	
 	def perform(self):
-		print(f"👩‍💼 StoryStartScene perform sentence: {self.sentence}")
+		print(f"👩‍💼 StoryStartScene perform sentence: {self.sentence} in {self.message['translation_language']}")
 		# Send caption when we start speaking the audio
 		# and remove the 'response' object because it doesn't serialize nicely
 		self.message.pop('response', None)
