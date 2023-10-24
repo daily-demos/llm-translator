@@ -14,7 +14,8 @@ class StoryGrandmaScene(Scene):
 		# don't need threads here because image
 		# is effectively instant
 		#self.scene_data['image'] = (self.grandma_writing)
-		self.scene_data['audio'] = self.orchestrator.request_tts(self.sentence, self.message['translation_language'])
+		self.scene_data['audio'] = self.orchestrator.request_tts(self.message)
+		
 		print(f"👩‍💼 StoryStartScene prepare complete for: {self.sentence} in {self.message['translation_language']}")
 		
 	

@@ -137,7 +137,8 @@ class DailyLLM(EventHandler):
 
     def call_joined(self, join_data, client_error):
         self.print_debug(f"call_joined: {join_data}, {client_error}")
-        self.client.start_transcription(settings={"model": "nova-2-ea" })
+        # self.client.start_transcription(settings={"model": "nova-2-ea" })
+        self.client.start_transcription()
 
 
     def on_participant_updated(self, participant):

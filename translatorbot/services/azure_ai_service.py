@@ -21,13 +21,21 @@ class AzureAIService(AIService):
         self.speech_synthesizer = SpeechSynthesizer(speech_config=self.speech_config, audio_config=None)
         
         self.languages = {
-            "french": {"lang": "fr-FR", "voice": "fr-FR-HenriNeural"},
-            "spanish": {"lang": "es-MX", "voice": "es-MX-JorgeNeural"}
+            "french": {"lang": "fr-FR", "voices": ["fr-FR-HenriNeural", "fr-FR-DeniseNeural"]},
+            "spanish": {"lang": "es-MX", "voices": ["es-MX-JorgeNeural", "es-MX-DaliaNeural"]}
         }
+        
+        self.speakers = []
 
-    def run_tts(self, sentence, language):
+    def run_tts(self, message):
+        sentence = message['translation']
+        language = message['translation_language']
+        sid = message['session_id']
+        if not sid in self.speakers:
+            self.speakers.append(sid)
+        
         print("⌨️ running azure tts async")
-        voice = self.languages[language]['voice']
+        voice = self.languages[language]['voices'][self.speakers.index(sid)]
         lang = self.languages[language]['lang']
         ssml = f"<speak version='1.0' xml:lang='{lang}' xmlns='http://www.w3.org/2001/10/synthesis' " \
            "xmlns:mstts='http://www.w3.org/2001/mstts'>" \
@@ -41,7 +49,7 @@ class AzureAIService(AIService):
         print("⌨️ got azure tts result")
         if result.reason == ResultReason.SynthesizingAudioCompleted:
             print("⌨️ returning result")
-            return result.audio_data
+            yield result.audio_data[44:]
         elif result.reason == ResultReason.Canceled:
             cancellation_details = result.cancellation_details
             print("Speech synthesis canceled: {}".format(cancellation_details.reason))
