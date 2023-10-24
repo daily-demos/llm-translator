@@ -2,7 +2,9 @@ import json
 import io
 import random
 import re
+import struct
 import time
+import traceback
 from datetime import datetime
 from queue import Queue
 from queue import Empty
@@ -47,6 +49,7 @@ class Orchestrator():
 
 
     def handle_user_speech(self, message):
+        # TODO Need to support overlapping speech here!
         print(f"👅 Handling user speech: {message}")
         if not self.llm_response_thread or not self.llm_response_thread.is_alive():
             self.llm_response_thread = Thread(target=self.request_llm_response, args=(message,))
@@ -166,10 +169,10 @@ class Orchestrator():
         self.tts_getter.join()
         self.image_getter.join()
 
-    def request_tts(self, text, language):
+    def request_tts(self, message):
         try:
-            audio = self.ai_tts_service.run_tts(text, language)
-            return audio
+            for chunk in self.ai_tts_service.run_tts(message):
+                yield chunk
         except Exception as e:
             print(f"Exception in request_tts: {e}")
 
@@ -199,12 +202,21 @@ class Orchestrator():
             
 
     def handle_audio(self, audio):
-        print("🏙️ orchestrator handle audio")
-        stream = io.BytesIO(audio)
-
-        # Skip RIFF header
-        stream.read(44)
-        self.microphone.write_frames(stream.read())
+        b = bytearray()
+        final = False
+        try:
+            for chunk in audio:
+                b.extend(chunk)
+                l = len(b) - (len(b) % 640)
+                if l:
+                    self.microphone.write_frames(bytes(b[:l]))
+                    b = b[l:]
+        
+            final = True
+            self.microphone.write_frames(bytes(b))
+            time.sleep(len(b) / 1600)
+        except Exception as e:
+            print(f"Exception in handle_audio: {e}", len(b), final)
 
     def display_image(self, image):
         if self.image_setter:
@@ -245,7 +257,6 @@ class Orchestrator():
                 else:
                     print(f"🎬 Performing sentenceless scene: {type(scene).__name__}")
                 scene.perform()
-                time.sleep(0)
             except Empty:
                 time.sleep(0.1)
                 continue
