@@ -51,11 +51,7 @@ class Orchestrator():
     def handle_user_speech(self, message):
         # TODO Need to support overlapping speech here!
         print(f"👅 Handling user speech: {message}")
-        if not self.llm_response_thread or not self.llm_response_thread.is_alive():
-            self.llm_response_thread = Thread(target=self.request_llm_response, args=(message,))
-            self.llm_response_thread.start()
-        else:
-            print("discarding overlapping speech, TODO barge-in")
+        Thread(target=self.request_llm_response, args=(message,)).start()
 
     def start_listening(self):
         self.started_listening_at = datetime.now()
