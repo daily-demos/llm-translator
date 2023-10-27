@@ -60,11 +60,6 @@ class DailyLLM(EventHandler):
         self.configure_daily()
 
         self.stop_threads = False
-        self.image = None
-
-        self.print_debug("starting camera thread")
-        self.camera_thread = Thread(target=self.run_camera)
-        self.camera_thread.start()
 
         self.print_debug("starting orchestrator")
         self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id, self.language)
@@ -106,8 +101,6 @@ class DailyLLM(EventHandler):
 
         self.mic = Daily.create_microphone_device("mic", sample_rate = 16000, channels = 1)
         self.speaker = Daily.create_speaker_device("speaker", sample_rate = 16000, channels = 1)
-        self.camera = Daily.create_camera_device("camera", width = 512, height = 512, color_format="RGB")
-
 
         Daily.select_speaker_device("speaker")
 
@@ -116,10 +109,7 @@ class DailyLLM(EventHandler):
 
         self.client.update_inputs({
             "camera": {
-                "isEnabled": True,
-                "settings": {
-                    "deviceId": "camera"
-                }
+                "isEnabled": False,
             },
             "microphone": {
                 "isEnabled": True,
@@ -130,7 +120,6 @@ class DailyLLM(EventHandler):
         })
 
         self.my_participant_id = self.client.participants()['local']['id']
-        # Update meeting info to indicate that I'm the translator for my language
         
 
     def call_joined(self, join_data, client_error):
@@ -179,29 +168,6 @@ class DailyLLM(EventHandler):
 
     def send_app_message(self, message):
         self.client.send_app_message(message)
-
-    def set_image(self, image):
-        self.image = image
-
-    def run_camera(self):
-        try:
-            while not self.stop_threads:
-                if self.image:
-                    self.camera.write_frame(self.image.tobytes())
-                time.sleep(1.0 / 15.0) # 15 fps
-        except Exception as e:
-            self.print_debug(f"Exception {e} in camera thread.")
-
-    def wave(self):
-        self.client.send_app_message({
-            "event": "sync-emoji-reaction",
-            "reaction": {
-                "emoji": "👋",
-                "room": "main-room",
-                "sessionId": "bot",
-                "id": time.time(),
-            }
-        })
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Daily LLM bot")
