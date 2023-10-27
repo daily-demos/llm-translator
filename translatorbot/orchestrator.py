@@ -9,14 +9,9 @@ from datetime import datetime
 from queue import Queue
 from queue import Empty
 
-from search import SearchIndexer
 from services.mock_ai_service import MockAIService
-from scenes.story_page_scene import StoryPageScene
-from scenes.story_page_async_scene import StoryPageAsyncScene
 
 from scenes.translator_scene import TranslatorScene
-from scenes.stop_listening_scene import StopListeningScene
-from scenes.start_listening_scene import StartListeningScene
 
 from threading import Thread
 
@@ -29,7 +24,6 @@ class Orchestrator():
         self.ai_image_gen_service = ai_image_gen_service
         self.ai_llm_service = ai_llm_service
 
-        self.search_indexer = SearchIndexer(story_id)
         
         self.language = language
 
@@ -229,17 +223,6 @@ class Orchestrator():
         # before we actually start playback
         self.playback_thread = Thread(target=self.playback)
         self.playback_thread.start()
-
-    def index_scene_async(self, scene):
-        self.search_indexer.index_text(scene.sentence)
-        if 'url' in scene.scene_data:
-            self.search_indexer.index_image(scene.scene_data['url'])
-
-    def index_scene(self, scene):
-        if 'sentence' in scene.__dict__:
-            thread = Thread(target=self.index_scene_async, args=(scene,))
-            thread.start()
-            # we let this thread run unattended
 
     def playback(self):
         while True:

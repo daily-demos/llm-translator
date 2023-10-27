@@ -20,15 +20,6 @@ class Scene:
 		self.scene_data = {}		
 		self.image_thread = None
 		self.audio_thread = None
-		
-		# everybody needs a grandma now and then
-		script_dir = os.path.dirname(__file__)
-		listening_path = "../grandma-listening.png"
-		writing_path = "../grandma-writing.png"
-		listening_path = os.path.join(script_dir, listening_path)
-		writing_path = os.path.join(script_dir, writing_path)
-		self.grandma_listening = Image.open(listening_path)
-		self.grandma_writing = Image.open(writing_path)
 
 		self.prepare_thread = threading.Thread(target=self.prepare)
 		self.prepare_thread.start()
