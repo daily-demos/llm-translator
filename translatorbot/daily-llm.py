@@ -172,9 +172,12 @@ class DailyLLM(EventHandler):
 
     def on_transcription_message(self, message):
         # TODO: This should maybe match on my own participant id instead but I'm in a hurry
-        if message['session_id'] != self.my_participant_id:
+        #if message['session_id'] != self.my_participant_id:
+        if not re.match(r"tb\-.*", message['user_name']):
             print(f"💼 Got transcription: {message['text']}")
             self.orchestrator.handle_user_speech(message)
+        else:
+            print(f"💼 Got transcription from translator {message['user_name']}, ignoring")
 
     def send_app_message(self, message):
         self.client.send_app_message(message)

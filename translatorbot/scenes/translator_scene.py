@@ -1,7 +1,7 @@
 from scenes.scene import Scene
 from threading import Thread
 
-class StoryGrandmaScene(Scene):
+class TranslatorScene(Scene):
 	def __init__(self, **kwargs):
 		print("StoryPageScene init")
 		self.message = kwargs.get('message', None)

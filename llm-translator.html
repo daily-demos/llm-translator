@@ -1,16 +1,64 @@
 <html>
   <head>
-    <title>Daily.co Call Object Demo</title>
+    <title>Daily.co Translator Demo</title>
     <script src="https://unpkg.com/@daily-co/daily-js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+          segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto,
+          arial, sans-serif;
+        font-size: 1.6em;
+      }
+      button {
+        font-size: 1em;
+      }
+      select {
+        font-size: 1em;
+      }
+      div#videos {
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        height: 90%;
+        display: flex;
+      }
+      div#videos > div {
+        padding: 1em;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      div#videos > div video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      div#videos .subtitles {
+        height: 5em;
+      }
+      div#videos .subtitles p {
+        text-align: center;
+        margin-block-start: 0.2em;
+      }
+      div#controls {
+        padding: 0.2em;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
   </head>
   <body onload="main()">
     <div id="controls">
-      <button id="join" onclick="joinRoom()">Join Room</button>
-      <button id="leave" onclick="leaveRoom()">Leave Room</button>
-      <span>Language:</span>
-      <select id="language" onChange="changeLanguage()">
-        <option value="english" selected>English</option>
-      </select>
+      <div id="controls-left">
+        <button id="join" onclick="joinRoom()">Join Room</button>
+        <button id="leave" onclick="leaveRoom()">Leave Room</button>
+      </div>
+      <div id="controls-right">
+        <span>Language:</span>
+        <select id="language" onChange="changeLanguage()">
+          <option value="english" selected>English</option>
+        </select>
+      </div>
     </div>
     <div id="videos"></div>
     <div id="audios"></div>
@@ -36,7 +84,7 @@
         subtitleDiv.appendChild(p);
         setTimeout(() => {
           p.remove();
-        }, 5000);
+        }, 7000);
       }
 
       async function main() {
@@ -81,6 +129,7 @@
           console.log("🤠 Participant joined: ", ev);
           const p = ev.participant;
           // is this a person or a translator bot?
+
           if (isTranslator(p)) {
             // This is a translator. Update the list of languages
             // to include this translator's language
@@ -136,14 +185,16 @@
           paxDiv.id = "pax-" + pid;
           let videoEl = document.createElement("video");
           let subtitleDiv = document.createElement("div");
+          subtitleDiv.classList.add("subtitles");
           subtitleDiv.id = "subtitles-" + pid;
           paxDiv.appendChild(videoEl);
           paxDiv.appendChild(subtitleDiv);
           videosDiv.appendChild(paxDiv);
-          paxDiv.style.width = "50%";
-          videoEl.style.width = "100%";
+          //paxDiv.style.width = "50%";
+          //videoEl.style.width = "100%";
           videoEl.srcObject = new MediaStream([evt.track]);
           videoEl.play();
+          //showSubtitle(evt.participant.session_id, "test subtitle");
         }
       }
 

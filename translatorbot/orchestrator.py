@@ -14,7 +14,7 @@ from services.mock_ai_service import MockAIService
 from scenes.story_page_scene import StoryPageScene
 from scenes.story_page_async_scene import StoryPageAsyncScene
 
-from scenes.story_grandma_scene import StoryGrandmaScene
+from scenes.translator_scene import TranslatorScene
 from scenes.stop_listening_scene import StopListeningScene
 from scenes.start_listening_scene import StartListeningScene
 
@@ -84,7 +84,7 @@ class Orchestrator():
         #sentence = self.ai_tts_service.run_tts(out)
         message['translation'] = out
         message['translation_language'] = self.language
-        self.enqueue(StoryGrandmaScene, message=message)
+        self.enqueue(TranslatorScene, message=message)
 
     def handle_llm_response(self, llm_response):
         out = ''
@@ -109,7 +109,7 @@ class Orchestrator():
 
                             out = out.replace("\n", " ")
                             if len(out) > 2:
-                                self.enqueue(StoryGrandmaScene, sentence=out)
+                                self.enqueue(TranslatorScene, sentence=out)
                             out = ''
 
                         elif re.findall(r'.*\[[bB]reak\].*', out):
@@ -148,7 +148,7 @@ class Orchestrator():
                         out = ''
         # get the last one too; it should be the prompt
         print(f"🎬 FINAL Out: {out}")
-        self.enqueue(StoryGrandmaScene, sentence=out)
+        self.enqueue(TranslatorScene, sentence=out)
         self.enqueue(StartListeningScene)
         print(f"🎬 FULL MESSAGE: {full_response}")
         self.messages.append({"role": "assistant", "content": full_response})
