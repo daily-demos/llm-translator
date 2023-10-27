@@ -22,7 +22,7 @@ class DailyLLM(EventHandler):
             room_url=os.getenv("DAILY_URL"),
             token=os.getenv('DAILY_TOKEN'),
             bot_name="Translator",
-            language="french", # keep the generated images to a certain theme, like "golden age of illustration," "talented kid's crayon drawing", etc.
+            language="french",
         ):
 
         # room + bot details
@@ -33,6 +33,7 @@ class DailyLLM(EventHandler):
             self.token = token
         else:
             self.token = get_meeting_token(room_name, os.getenv("DAILY_API_KEY"))
+        
         # hard-coding this for now so clients can find translators
         self.bot_name = f"tb-{self.language}"
 
@@ -66,8 +67,6 @@ class DailyLLM(EventHandler):
         self.orchestrator.action()
 
         self.participant_left = False
-        self.transcription = ""
-        self.last_fragment_at = None
 
         try:
             participant_count = len(self.client.participants())
