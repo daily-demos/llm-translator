@@ -18,4 +18,4 @@ Then, copy `.env.example` to `.env` and add your keys, as well as the URL of the
 
 Next, run `python daily-llm.py -l spanish` to start a Spanish translator.
 
-Finally, open `llm-translator.html?host=true` in your browser to join as a host. In another tab, open `llm-translator.html` without `host=true` to join in 'audience mode'.
+Finally, open `llm-translator.html?domain=YOURDOMAIN&room=YOURROOM&host=true` in your browser to join as a host. In another tab, open `llm-translator.html?domain=YOURDOMAIN&room=YOURROOM` without `host=true` to join in 'audience mode'.

@@ -79,7 +79,6 @@
       const camSelect = document.querySelector("select#cams");
       const micSelect = document.querySelector("select#mics");
       const host = !!urlParams.get("host");
-      console.log({ host });
 
       function cap(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -112,7 +111,6 @@
       }
 
       function startTrack(evt) {
-        console.log("track started: ", evt);
         if (evt.track.kind === "audio" && !evt.participant.local) {
           let audiosDiv = document.getElementById("audios");
           let audioEl = document.createElement("audio");
@@ -122,7 +120,6 @@
           audioEl.play();
         } else if (evt.track.kind === "video") {
           let pid = evt.participant.session_id;
-          console.log({ pid });
           let videosDiv = document.getElementById("videos");
           let paxDiv = document.createElement("div");
           paxDiv.id = "pax-" + pid;
@@ -133,11 +130,8 @@
           paxDiv.appendChild(videoEl);
           paxDiv.appendChild(subtitleDiv);
           videosDiv.appendChild(paxDiv);
-          //paxDiv.style.width = "50%";
-          //videoEl.style.width = "100%";
           videoEl.srcObject = new MediaStream([evt.track]);
           videoEl.play();
-          //showSubtitle(evt.participant.session_id, "test subtitle");
         }
       }
 
@@ -170,12 +164,10 @@
       }
 
       async function joinRoom() {
-        const domain = urlParams.get("domain") || "chad-hq";
-        const room = urlParams.get("room") || "raw-tracks";
+        const domain = urlParams.get("domain") || "YOURDOMAIN";
+        const room = urlParams.get("room") || "YOURROOM";
 
         const ROOM_URL = `https://${domain}.daily.co/${room}`;
-        //const ROOM_URL="https://preview-9024.staging.daily.co/raw-tracks?domain=chad-hq&bypassRegionDetection=true"
-        console.log("joining with devices: ", camSelect.value, micSelect.value);
         window.call = DailyIframe.createCallObject({
           url: ROOM_URL,
           subscribeToTracksAutomatically: false,
@@ -187,6 +179,7 @@
         [
           "participant-updated",
           "participant-left",
+          "participant-joined",
           "error",
           "camera-error",
           "started-camera",
@@ -206,14 +199,12 @@
         call.on("track-stopped", stopTrack);
 
         call.on("participant-joined", (ev) => {
-          console.log("🤠 Participant joined: ", ev);
           const p = ev.participant;
           // is this a person or a translator bot?
 
           if (isTranslator(p)) {
             // This is a translator. Update the list of languages
             // to include this translator's language
-            console.log("this is a translator");
             const lang = translatorLanguage(p);
             const newOpt = document.createElement("option");
             newOpt.value = lang;
@@ -222,8 +213,6 @@
           } else {
             // This is a human. Subscribe to their video, and their
             // audio if the current language is English
-            console.log("this is a human");
-            console.log(languageSelect.value);
             const audioSub = languageSelect.value === "english";
             call.updateParticipant(p["session_id"], {
               setSubscribedTracks: {
@@ -235,13 +224,10 @@
         });
 
         call.on("app-message", (e) => {
-          console.log("Got app message: ", e);
           const lang = languageSelect.value;
           if (e.fromId === "transcription" && lang === "english") {
-            console.log("got it for english: ", e.data.text);
             showSubtitle(e.data.session_id, e.data.text);
           } else if (e.data.translation_language === lang) {
-            console.log("got it for non-english: ", e.data.translation);
             showSubtitle(e.data.session_id, e.data.translation);
           }
           e.fromId;
@@ -263,12 +249,10 @@
         });
         let dummyTracks = dummy.getTracks();
         for (t in dummyTracks) {
-          console.log({ t });
           dummyTracks[t].stop();
         }
 
         var devices = await navigator.mediaDevices.enumerateDevices();
-        console.log({ devices });
         var cameras = devices.filter((d) => d.kind == "videoinput");
         var mics = devices.filter((d) => d.kind == "audioinput");
         for (var c of cameras) {
