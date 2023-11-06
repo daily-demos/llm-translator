@@ -15,6 +15,10 @@
       select {
         font-size: 1em;
       }
+      div#controls-left select {
+        font-size: 0.6em;
+      }
+
       div#videos {
         display: flex;
         width: 100%;
@@ -50,6 +54,11 @@
   <body onload="main()">
     <div id="controls">
       <div id="controls-left">
+        <button id="load-devices" onclick="loadDevices()" style="display: none">
+          Load Cameras
+        </button>
+        <select id="cams" style="display: none"></select>
+        <select id="mics" style="display: none"></select>
         <button id="join" onclick="joinRoom()">Join Room</button>
         <button id="leave" onclick="leaveRoom()">Leave Room</button>
       </div>
@@ -63,7 +72,14 @@
     <div id="videos"></div>
     <div id="audios"></div>
     <script>
+      const urlParams = new URLSearchParams(window.location.search);
+
       const languageSelect = document.getElementById("language");
+      const loadButton = document.querySelector("button#load-devices");
+      const camSelect = document.querySelector("select#cams");
+      const micSelect = document.querySelector("select#mics");
+      const host = !!urlParams.get("host");
+      console.log({ host });
 
       function cap(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -88,19 +104,83 @@
       }
 
       async function main() {
-        const urlParams = new URLSearchParams(window.location.search);
+        if (host) {
+          loadButton.style.display = "inline";
+          camSelect.style.display = "inline";
+          micSelect.style.display = "inline";
+        }
+      }
+
+      function startTrack(evt) {
+        console.log("track started: ", evt);
+        if (evt.track.kind === "audio" && !evt.participant.local) {
+          let audiosDiv = document.getElementById("audios");
+          let audioEl = document.createElement("audio");
+          audiosDiv.appendChild(audioEl);
+          audioEl.style.width = "100%";
+          audioEl.srcObject = new MediaStream([evt.track]);
+          audioEl.play();
+        } else if (evt.track.kind === "video") {
+          let pid = evt.participant.session_id;
+          console.log({ pid });
+          let videosDiv = document.getElementById("videos");
+          let paxDiv = document.createElement("div");
+          paxDiv.id = "pax-" + pid;
+          let videoEl = document.createElement("video");
+          let subtitleDiv = document.createElement("div");
+          subtitleDiv.classList.add("subtitles");
+          subtitleDiv.id = "subtitles-" + pid;
+          paxDiv.appendChild(videoEl);
+          paxDiv.appendChild(subtitleDiv);
+          videosDiv.appendChild(paxDiv);
+          //paxDiv.style.width = "50%";
+          //videoEl.style.width = "100%";
+          videoEl.srcObject = new MediaStream([evt.track]);
+          videoEl.play();
+          //showSubtitle(evt.participant.session_id, "test subtitle");
+        }
+      }
+
+      function stopTrack(evt) {
+        let vids = document.getElementsByTagName("video");
+        for (let vid of vids) {
+          if (
+            vid.srcObject &&
+            vid.srcObject.getVideoTracks()[0] === evt.track
+          ) {
+            vid.remove();
+          }
+        }
+      }
+
+      async function changeLanguage() {
+        const lang = languageSelect.value;
+        console.log("changing language to: ", lang);
+        let allPax = call.participants();
+        let paxIds = Object.keys(allPax).filter((p) => p !== "local");
+        paxIds.forEach((id) => {
+          const p = allPax[id];
+          const wantsAudio =
+            (isTranslator(p) && translatorLanguage(p) === lang) ||
+            (!isTranslator(p) && lang === "english");
+          call.updateParticipant(id, {
+            setSubscribedTracks: { audio: wantsAudio },
+          });
+        });
+      }
+
+      async function joinRoom() {
         const domain = urlParams.get("domain") || "chad-hq";
-        const room = urlParams.get("room") || "sfu";
+        const room = urlParams.get("room") || "raw-tracks";
 
         const ROOM_URL = `https://${domain}.daily.co/${room}`;
         //const ROOM_URL="https://preview-9024.staging.daily.co/raw-tracks?domain=chad-hq&bypassRegionDetection=true"
+        console.log("joining with devices: ", camSelect.value, micSelect.value);
         window.call = DailyIframe.createCallObject({
           url: ROOM_URL,
-          //startAudioOff: true,
-          //startVideoOff: true,
           subscribeToTracksAutomatically: false,
-          audioSource: false,
-          videoSource: false,
+          audioSource: host ? micSelect.value : false,
+          videoSource: host ? camSelect.value : false,
           dailyConfig: {},
         });
 
@@ -166,67 +246,6 @@
           }
           e.fromId;
         });
-      }
-
-      function startTrack(evt) {
-        console.log("track started: ", evt);
-        if (evt.track.kind === "audio" && !evt.participant.local) {
-          let audiosDiv = document.getElementById("audios");
-          let audioEl = document.createElement("audio");
-          audiosDiv.appendChild(audioEl);
-          audioEl.style.width = "100%";
-          audioEl.srcObject = new MediaStream([evt.track]);
-          audioEl.play();
-        } else if (evt.track.kind === "video") {
-          let pid = evt.participant.session_id;
-          console.log({ pid });
-          let videosDiv = document.getElementById("videos");
-          let paxDiv = document.createElement("div");
-          paxDiv.id = "pax-" + pid;
-          let videoEl = document.createElement("video");
-          let subtitleDiv = document.createElement("div");
-          subtitleDiv.classList.add("subtitles");
-          subtitleDiv.id = "subtitles-" + pid;
-          paxDiv.appendChild(videoEl);
-          paxDiv.appendChild(subtitleDiv);
-          videosDiv.appendChild(paxDiv);
-          //paxDiv.style.width = "50%";
-          //videoEl.style.width = "100%";
-          videoEl.srcObject = new MediaStream([evt.track]);
-          videoEl.play();
-          //showSubtitle(evt.participant.session_id, "test subtitle");
-        }
-      }
-
-      function stopTrack(evt) {
-        let vids = document.getElementsByTagName("video");
-        for (let vid of vids) {
-          if (
-            vid.srcObject &&
-            vid.srcObject.getVideoTracks()[0] === evt.track
-          ) {
-            vid.remove();
-          }
-        }
-      }
-
-      async function changeLanguage() {
-        const lang = languageSelect.value;
-        console.log("changing language to: ", lang);
-        let allPax = call.participants();
-        let paxIds = Object.keys(allPax).filter((p) => p !== "local");
-        paxIds.forEach((id) => {
-          const p = allPax[id];
-          const wantsAudio =
-            (isTranslator(p) && translatorLanguage(p) === lang) ||
-            (!isTranslator(p) && lang === "english");
-          call.updateParticipant(id, {
-            setSubscribedTracks: { audio: wantsAudio },
-          });
-        });
-      }
-
-      async function joinRoom() {
         await call.join({});
       }
 
@@ -236,6 +255,37 @@
           vid.remove();
         }
         await call.leave();
+      }
+      async function loadDevices() {
+        const dummy = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: true,
+        });
+        let dummyTracks = dummy.getTracks();
+        for (t in dummyTracks) {
+          console.log({ t });
+          dummyTracks[t].stop();
+        }
+
+        var devices = await navigator.mediaDevices.enumerateDevices();
+        console.log({ devices });
+        var cameras = devices.filter((d) => d.kind == "videoinput");
+        var mics = devices.filter((d) => d.kind == "audioinput");
+        for (var c of cameras) {
+          var opt = document.createElement("option");
+          opt.value = c.deviceId;
+          opt.text = c.label;
+          camSelect.appendChild(opt);
+        }
+        for (var m of mics) {
+          var opt = document.createElement("option");
+          opt.value = m.deviceId;
+          opt.text = m.label;
+          micSelect.appendChild(opt);
+        }
+
+        // go ahead and start showing the first camera in the list
+        //previewCam();
       }
     </script>
   </body>
