@@ -112,19 +112,19 @@
 
       function startTrack(evt) {
         if (evt.track.kind === "audio" && !evt.participant.local) {
-          let audiosDiv = document.getElementById("audios");
-          let audioEl = document.createElement("audio");
+          const audiosDiv = document.getElementById("audios");
+          const audioEl = document.createElement("audio");
           audiosDiv.appendChild(audioEl);
           audioEl.style.width = "100%";
           audioEl.srcObject = new MediaStream([evt.track]);
           audioEl.play();
         } else if (evt.track.kind === "video") {
-          let pid = evt.participant.session_id;
-          let videosDiv = document.getElementById("videos");
-          let paxDiv = document.createElement("div");
+          const pid = evt.participant.session_id;
+          const videosDiv = document.getElementById("videos");
+          const paxDiv = document.createElement("div");
           paxDiv.id = "pax-" + pid;
-          let videoEl = document.createElement("video");
-          let subtitleDiv = document.createElement("div");
+          const videoEl = document.createElement("video");
+          const subtitleDiv = document.createElement("div");
           subtitleDiv.classList.add("subtitles");
           subtitleDiv.id = "subtitles-" + pid;
           paxDiv.appendChild(videoEl);

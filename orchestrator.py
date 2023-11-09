@@ -16,7 +16,7 @@ from scenes.translator_scene import TranslatorScene
 from threading import Thread
 
 class Orchestrator():
-    def __init__(self, image_setter, microphone, ai_tts_service, ai_image_gen_service, ai_llm_service, story_id, language):
+    def __init__(self, image_setter, microphone, ai_tts_service, ai_image_gen_service, ai_llm_service, story_id, in_language, out_language):
         self.image_setter = image_setter
         self.microphone = microphone
 
@@ -25,7 +25,8 @@ class Orchestrator():
         self.ai_llm_service = ai_llm_service
 
         
-        self.language = language
+        self.in_language = in_language
+        self.out_language = out_language
 
         self.tts_getter = None
         self.image_getter = None
@@ -35,13 +36,12 @@ class Orchestrator():
         self.stop_threads = False
 
     def handle_user_speech(self, message):
-        # TODO Need to support overlapping speech here!
         print(f"👅 Handling user speech: {message}")
         Thread(target=self.request_llm_response, args=(message,)).start()
 
     def request_llm_response(self, message):
         try:
-            msgs = [{"role": "system", "content": f"You will be provided with a sentence in English, and your task is to translate it into {self.language.capitalize()}."}, {"role": "user", "content": message['text']}]
+            msgs = [{"role": "system", "content": f"You will be provided with a sentence in {self.in_language.capitalize()}, and your task is to translate it into {self.out_language.capitalize()}."}, {"role": "user", "content": message['text']}]
             message['response'] = self.ai_llm_service.run_llm(msgs)
             self.handle_translation(message)
         except Exception as e:
@@ -60,7 +60,7 @@ class Orchestrator():
                     out += next_chunk
         #sentence = self.ai_tts_service.run_tts(out)
         message['translation'] = out
-        message['translation_language'] = self.language
+        message['translation_language'] = self.out_language
         self.enqueue(TranslatorScene, message=message)
 
     def request_tts(self, message):

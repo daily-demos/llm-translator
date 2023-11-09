@@ -22,20 +22,27 @@ class DailyLLM(EventHandler):
             room_url=os.getenv("DAILY_URL"),
             token=os.getenv('DAILY_TOKEN'),
             bot_name="Translator",
-            language="french",
+            in_language="spanish",
+            out_language="english"
         ):
+        
+        self.deepgram_languages = {"spanish": "es", "english": "en"}
 
         # room + bot details
         self.room_url = room_url
-        self.language = language
+        self.in_language = in_language
+        self.out_language = out_language
         room_name = get_room_name(room_url)
         if token:
             self.token = token
         else:
             self.token = get_meeting_token(room_name, os.getenv("DAILY_API_KEY"))
         
-        # hard-coding this for now so clients can find translators
-        self.bot_name = f"tb-{self.language}"
+        # hard-coding this so clients can find translators
+        self.bot_name = f"tb-{self.in_language}-{self.out_language}"
+        # Keep participant IDs of anyone that speaks this language
+        # So we know to collect their transcription messages
+        self.participant_langs = {}
 
         duration = os.getenv("BOT_MAX_DURATION")
         if not duration:
@@ -43,10 +50,6 @@ class DailyLLM(EventHandler):
         else:
             duration = int(duration)
         self.expiration = time.time() + duration
-        self.story_started = False
-
-        self.finished_talking_at = None
-
 
         print(f"{room_url} Joining", self.room_url, "as", self.bot_name, "leaving at", self.expiration, "current time is", time.time())
 
@@ -63,7 +66,7 @@ class DailyLLM(EventHandler):
         self.stop_threads = False
 
         self.print_debug("starting orchestrator")
-        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id, self.language)
+        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id, self.in_language, self.out_language)
         self.orchestrator.action()
 
         self.participant_left = False
@@ -77,12 +80,11 @@ class DailyLLM(EventHandler):
         except Exception as e:
             self.print_debug(f"Exception {e}")
         finally:
+            self.client.stop_transcription()
             self.client.leave()
 
         self.stop_threads = True
         self.print_debug("Shutting down")
-        self.camera_thread.join()
-        self.print_debug("camera thread stopped")
 
     def print_debug(self, s):
         print(f"{self.room_url} {s}", flush=True)
@@ -121,14 +123,33 @@ class DailyLLM(EventHandler):
         self.my_participant_id = self.client.participants()['local']['id']
         
 
+    def send_languages(self):
+        self.client.send_app_message({"msg": "translatorbot", "data": {"in": self.in_language, "out": self.out_language}})
+
     def call_joined(self, join_data, client_error):
-        self.print_debug(f"call_joined: {join_data}, {client_error}")
+        self.print_debug(f"call_joined: {join_data}, {client_error}, deepgram language: {self.deepgram_languages[self.in_language]}")
+        #self.client.start_transcription(settings={"language": "es"})
+        #self.client.start_transcription(settings={"language": self.deepgram_languages[self.in_language] })
+        self.send_languages()
+        self.client.send_app_message({"msg": "request-languages"})
+        # print(f"Transcription started, hopefully")
+        # If you have access to Deepgram's nova-2 model, you can comment out
+        # the line above, and uncomment this line instead:
         # self.client.start_transcription(settings={"model": "nova-2-ea" })
-        self.client.start_transcription()
+
 
 
     def on_participant_updated(self, participant):
+        # print(f"Participant updated: {participant}")
         pass
+    
+    def on_app_message(self, message, sender):
+        print(f"App message received: {message}, sender: {sender}")
+        if message['msg'] == 'request-languages':
+            self.send_languages()
+        elif message['msg'] == 'participant':
+            self.participant_langs[sender] = message['data']['lang']
+            print(f"Participant langs updated; now it's {self.participant_langs}")
 
     def on_call_state_updated(self, call_state):
         pass
@@ -150,14 +171,13 @@ class DailyLLM(EventHandler):
 
     def on_participant_left(self, participant, reason):
         pass
-        # TODO: Uncomment if we want to leave when the participant leaves
+        # Uncomment if we want to leave when the participant leaves
         
         # if len(self.client.participants()) < 2:
             # self.print_debug("participant left")
             # self.participant_left = True
 
     def on_transcription_message(self, message):
-        # TODO: This should maybe match on my own participant id instead but I'm in a hurry
         #if message['session_id'] != self.my_participant_id:
         if not re.match(r"tb\-.*", message['user_name']):
             print(f"💼 Got transcription: {message['text']}")
@@ -173,14 +193,15 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--url", type=str, help="URL of the Daily room")
     parser.add_argument("-t", "--token", type=str, help="Token for Daily API")
     parser.add_argument("-b", "--bot-name", type=str, help="Name of the bot")
-    parser.add_argument("-l", "--language", type=str, help="Language. Try 'french', 'spanish', 'japanese'")
+    parser.add_argument("-i", "--in_language", type=str, help="Language. Try 'french', 'spanish', 'japanese', or 'english'")
+    parser.add_argument("-o", "--out_language", type=str, help="Language. Try 'french', 'spanish', 'japanese', or 'english'")
 
     args = parser.parse_args()
 
     url = args.url or os.getenv("DAILY_URL")
-    bot_name = args.bot_name or "Storybot"
+    bot_name = args.bot_name or "Translatorbot"
     token = args.token or None
-    language = args.language or "french"
+    in_language = args.in_language or "spanish"
+    out_language = args.out_language or "english"
 
-    #app = DailyLLM(url, token, bot_name)
-    app = DailyLLM(os.getenv("DAILY_URL"), os.getenv("DAILY_TOKEN"), "Translatorbot", language)
+    app = DailyLLM(os.getenv("DAILY_URL"), os.getenv("DAILY_TOKEN"), "Translatorbot", in_language, out_language)
