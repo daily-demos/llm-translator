@@ -26,6 +26,8 @@ class AzureAIService(AIService):
             "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}}
         }
         
+        
+        
         self.speakers = {"male": [], "female": []}
 
     def run_tts(self, message):
