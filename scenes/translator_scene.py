@@ -24,5 +24,6 @@ class TranslatorScene(Scene):
 		# Send caption when we start speaking the audio
 		# and remove the 'response' object because it doesn't serialize nicely
 		self.message.pop('response', None)
+		print(f"Sending app message: {self.message}")
 		self.orchestrator.image_setter.send_app_message(self.message)
 		super().perform()

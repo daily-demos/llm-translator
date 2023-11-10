@@ -76,6 +76,7 @@ class Orchestrator():
         try:
             for chunk in audio:
                 b.extend(chunk)
+                print(f"playing chunk: {len(b)}")
                 l = len(b) - (len(b) % 640)
                 if l:
                     self.microphone.write_frames(bytes(b[:l]))

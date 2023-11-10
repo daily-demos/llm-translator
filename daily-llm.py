@@ -130,6 +130,7 @@ class DailyLLM(EventHandler):
         self.print_debug(f"call_joined: {join_data}, {client_error}, deepgram language: {self.deepgram_languages[self.in_language]}")
         #self.client.start_transcription(settings={"language": "es"})
         #self.client.start_transcription(settings={"language": self.deepgram_languages[self.in_language] })
+        self.client.start_transcription()
         self.send_languages()
         self.client.send_app_message({"msg": "request-languages"})
         # print(f"Transcription started, hopefully")
@@ -180,8 +181,21 @@ class DailyLLM(EventHandler):
     def on_transcription_message(self, message):
         #if message['session_id'] != self.my_participant_id:
         if not re.match(r"tb\-.*", message['user_name']):
-            print(f"💼 Got transcription: {message['text']}")
-            self.orchestrator.handle_user_speech(message)
+            print(f"💼 Got transcription: {message}")
+            print(f"speaker lang: {self.participant_langs[message['session_id']]}")
+            if self.participant_langs[message['session_id']] and self.participant_langs[message['session_id']]['spoken'] == self.in_language:
+                message['voice'] = self.participant_langs[message['session_id']]['voice']
+                print(f"handling user speech: {message}")
+                self.orchestrator.handle_user_speech(message)
+                # re-emit transcription with language info
+                message['translation_language'] = self.in_language
+                message['translation'] = message['text']
+                self.client.send_app_message(message)
+            else:
+                print(f"not handling user speech for non-translated language: {message}")
+
+
+            
         else:
             print(f"💼 Got transcription from translator {message['user_name']}, ignoring")
 

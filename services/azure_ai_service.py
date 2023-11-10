@@ -21,21 +21,24 @@ class AzureAIService(AIService):
         self.speech_synthesizer = SpeechSynthesizer(speech_config=self.speech_config, audio_config=None)
         
         self.languages = {
-            "french": {"lang": "fr-FR", "voices": ["fr-FR-HenriNeural", "fr-FR-DeniseNeural"]},
-            "spanish": {"lang": "es-MX", "voices": ["es-MX-JorgeNeural", "es-MX-DaliaNeural"]}
+            "english": {"lang": "en-US", "voices": {"male": ["en-US-GuyNeural", "en-US-DavisNeural"], "female": ["en-US-JennyNeural", "en-US-AmberNeural"]}},
+            "french": {"lang": "fr-FR", "voices": {"male": ["fr-FR-HenriNeural", "fr-FR-AlainNeural"], "female": ["fr-FR-DeniseNeural", "fr-FR-JacquelineNeural"]}},
+            "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}}
         }
         
-        self.speakers = []
+        self.speakers = {"male": [], "female": []}
 
     def run_tts(self, message):
         sentence = message['translation']
         language = message['translation_language']
+        voice = message['voice']
         sid = message['session_id']
-        if not sid in self.speakers:
-            self.speakers.append(sid)
+        if not sid in self.speakers[voice]:
+            self.speakers[voice].append(sid)
         
-        print("⌨️ running azure tts async")
-        voice = self.languages[language]['voices'][self.speakers.index(sid)]
+        print(f"⌨️ running azure tts async. This should be voice {self.speakers[voice].index(sid) % len(self.speakers[voice])}")
+        voice = self.languages[language]['voices'][voice][self.speakers[voice].index(sid) % len(self.speakers[voice])]
+        print(f"voice should be: {voice}")
         lang = self.languages[language]['lang']
         ssml = f"<speak version='1.0' xml:lang='{lang}' xmlns='http://www.w3.org/2001/10/synthesis' " \
            "xmlns:mstts='http://www.w3.org/2001/mstts'>" \
