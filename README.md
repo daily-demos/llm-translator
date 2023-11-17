@@ -2,7 +2,7 @@
 
 Live speech-to-speech translation in a Daily call.
 
-This demo has two parts. `translatorbot` contains the daily-python code that powers the translation. `llm-translator.html` is a basic call client that allows participants to select which audio and subtitles they receive.
+This demo has two parts. This app contains the daily-python code that powers the translation. It works with a client app based on the daily-react example app. It's currently in a branch [located here](https://github.com/chadbailey59/custom-video-daily-react-hooks/tree/chad/llm-translator).
 
 ## Getting Started
 
@@ -16,8 +16,6 @@ pip install -r requirements.txt
 
 Then, copy `.env.example` to `.env` and add your keys, as well as the URL of the Daily room you want to use for testing.
 
-Next, run `python daily-llm.py -l spanish` to start a Spanish translator.
+Next, run `python daily-llm.py -i spanish -o english` to start a Spanish-to-English translator.
 
-Finally, open `llm-translator.html?domain=YOURDOMAIN&room=YOURROOM&host=true` in your browser to join as a host. In another tab, open `llm-translator.html?domain=YOURDOMAIN&room=YOURROOM` without `host=true` to join in 'audience mode'.
-
-If you have access to Deepgram's nova-2 model, you can enable it in `daily-llm.py`. See the code comments around line 127 for details.
+There's currently a bug preventing `daily-python` from starting translation in languages other than English, so you'll need to start transcription yourself directly in the browser for now. You can do that by running `callObject.startTranscription({"language": "es"});` in a call client with an owner token.
