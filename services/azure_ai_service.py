@@ -1,5 +1,4 @@
 from services.ai_service import AIService
-from PIL import Image
 import openai
 import requests
 import os
@@ -36,12 +35,12 @@ class AzureAIService(AIService):
         language = message['translation_language']
         voice = message['voice']
         sid = message['session_id']
+        if not language in self.languages:
+            raise Exception(f"Azure Speech doesn't currently support {language}. Currently configured languages: {', '.join(self.languages.keys())}")
         if not sid in self.speakers[voice]:
             self.speakers[voice].append(sid)
         
-        print(f"⌨️ running azure tts async. This should be voice {self.speakers[voice].index(sid) % len(self.speakers[voice])}")
         voice = self.languages[language]['voices'][voice][self.speakers[voice].index(sid) % len(self.speakers[voice])]
-        print(f"voice should be: {voice}")
         lang = self.languages[language]['lang']
         ssml = f"<speak version='1.0' xml:lang='{lang}' xmlns='http://www.w3.org/2001/10/synthesis' " \
            "xmlns:mstts='http://www.w3.org/2001/mstts'>" \
@@ -76,25 +75,3 @@ class AzureAIService(AIService):
             messages=messages
         )
         return response
-
-    def run_image_gen(self, sentence):
-        print("generating azure image", sentence)
-
-        image = openai.Image.create(
-            api_type = 'azure',
-            api_version = '2023-06-01-preview',
-            api_key = os.getenv('AZURE_DALLE_KEY'),
-            api_base = os.getenv('AZURE_DALLE_ENDPOINT'),
-            deployment_id = os.getenv("AZURE_DALLE_DEPLOYMENT_ID"),
-            prompt=f'{sentence} in the style of {self.image_style}',
-            n=1,
-            size=f"512x512",
-        )
-
-        url = image["data"][0]["url"]
-        response = requests.get(url)
-
-        dalle_stream = io.BytesIO(response.content)
-        dalle_im = Image.open(dalle_stream)
-
-        return (url, dalle_im)

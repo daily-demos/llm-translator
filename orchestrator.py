@@ -16,12 +16,11 @@ from scenes.translator_scene import TranslatorScene
 from threading import Thread
 
 class Orchestrator():
-    def __init__(self, image_setter, microphone, ai_tts_service, ai_image_gen_service, ai_llm_service, story_id, in_language, out_language):
-        self.image_setter = image_setter
+    def __init__(self, daily_client, microphone, ai_tts_service, ai_llm_service, story_id, in_language, out_language):
+        self.daily_client = daily_client
         self.microphone = microphone
 
         self.ai_tts_service = ai_tts_service
-        self.ai_image_gen_service = ai_image_gen_service
         self.ai_llm_service = ai_llm_service
 
         
@@ -29,7 +28,6 @@ class Orchestrator():
         self.out_language = out_language
 
         self.tts_getter = None
-        self.image_getter = None
         self.llm_response_thread = None
 
         self.scene_queue = Queue()

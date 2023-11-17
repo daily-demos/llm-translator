@@ -20,11 +20,9 @@ class PlayHTAIService(AIService):
             api_key=self.speech_key,
         )
 
+        # PlayHT is English-only for now
         self.languages = {
-            "english": {"lang": "en-US", "voices": {"male": ["s3://voice-cloning-zero-shot/0b5b2e4b-5103-425e-8aa0-510dd35226e2/mark/manifest.json"], "female": ["s3://voice-cloning-zero-shot/820da3d2-3a3b-42e7-844d-e68db835a206/sarah/manifest.json"]}},
-            "french": {"lang": "fr-FR", "voices": {"male": ["fr-FR-HenriNeural", "fr-FR-AlainNeural"], "female": ["fr-FR-DeniseNeural", "fr-FR-JacquelineNeural"]}},
-            "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}},
-            "japanese": {"lang": "ja-JP", "voices": {"male": ["ja-JP-KeitaNeural", "ja-JP-DaichiNeural"], "female": ["ja-JP-NanamiNeural", "ja-JP-AoiNeural"]}}
+            "english": {"lang": "en-US", "voices": {"male": ["s3://voice-cloning-zero-shot/0b5b2e4b-5103-425e-8aa0-510dd35226e2/mark/manifest.json"], "female": ["s3://voice-cloning-zero-shot/820da3d2-3a3b-42e7-844d-e68db835a206/sarah/manifest.json"]}}
         }
 
     def run_tts(self, message):
@@ -32,17 +30,17 @@ class PlayHTAIService(AIService):
         language = message['translation_language']
         voice = message['voice']
         sid = message['session_id']
+        if not language in self.languages:
+            raise Exception(f"PlayHT doesn't currently support {language}. Currently configured languages: {', '.join(self.languages.keys())}")
         if not sid in self.speakers[voice]:
             self.speakers[voice].append(sid)
         
-        print(f"⌨️ running playHT tts. This should be voice {self.speakers[voice].index(sid) % len(self.speakers[voice])}")
         options = TTSOptions(
             voice=self.languages[language]['voices'][voice][self.speakers[voice].index(sid) % len(self.speakers[voice])],
             sample_rate=16000,
             quality="higher",
             format=Format.FORMAT_WAV
         )
-        print(f"voice should be: {voice}")
         sentence = message['translation']
 
         b = bytearray()

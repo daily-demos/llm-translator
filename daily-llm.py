@@ -66,7 +66,7 @@ class DailyLLM(EventHandler):
         self.stop_threads = False
 
         self.print_debug("starting orchestrator")
-        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.image_gen, self.llm, self.story_id, self.in_language, self.out_language)
+        self.orchestrator = Orchestrator(self, self.mic, self.tts, self.llm, self.story_id, self.in_language, self.out_language)
         self.orchestrator.action()
 
         self.participant_left = False
@@ -93,7 +93,6 @@ class DailyLLM(EventHandler):
         self.story_id = hex(random.getrandbits(128))[2:]
 
         self.tts = config.services[os.getenv("TTS_SERVICE")]()
-        self.image_gen = config.services[os.getenv("IMAGE_GEN_SERVICE")]()
         self.llm = config.services[os.getenv("LLM_SERVICE")]()
 
     def configure_daily(self):

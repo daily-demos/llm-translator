@@ -11,9 +11,6 @@ class TranslatorScene(Scene):
 		
 	def prepare(self):
 		print(f"👩‍💼 TranslatorScene prepare sentence: {self.sentence}")
-		# don't need threads here because image
-		# is effectively instant
-		#self.scene_data['image'] = (self.grandma_writing)
 		self.scene_data['audio'] = self.orchestrator.request_tts(self.message)
 		
 		print(f"👩‍💼 TranslatorScene prepare complete for: {self.sentence} in {self.message['translation_language']}")
@@ -25,5 +22,5 @@ class TranslatorScene(Scene):
 		# and remove the 'response' object because it doesn't serialize nicely
 		self.message.pop('response', None)
 		print(f"Sending app message: {self.message}")
-		self.orchestrator.image_setter.send_app_message(self.message)
+		self.orchestrator.daily_client.send_app_message(self.message)
 		super().perform()

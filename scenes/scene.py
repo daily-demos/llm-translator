@@ -1,6 +1,5 @@
 from abc import abstractmethod
 import threading
-from PIL import Image
 import os
 
 class Scene:
@@ -18,7 +17,6 @@ class Scene:
 		# or just leave it alone to do one or both async
 		self.orchestrator = kwargs.get('orchestrator', None)
 		self.scene_data = {}		
-		self.image_thread = None
 		self.audio_thread = None
 
 		self.prepare_thread = threading.Thread(target=self.prepare)
@@ -30,16 +28,6 @@ class Scene:
 	@abstractmethod
 	def prepare(self):
 		pass
-
-	def play_image(self):
-		try:
-			if self.image_thread:
-				self.image_thread.join()
-			if self.scene_data.get('image', None):
-				print("🖼️ setting image")
-				self.orchestrator.display_image(self.scene_data['image'])
-		except Exception as e:
-			print(f"Exception in play_image: {e}")
 
 	def play_audio(self):
 		try:
@@ -53,14 +41,8 @@ class Scene:
 
 	def perform(self):
 		self.prepare_thread.join()
-		print("🖼️ in parent perform, past prepare join")
-		img = threading.Thread(target=self.play_image)
-		img.start()
 		aud = threading.Thread(target=self.play_audio)
 		aud.start()
-		# Don't join the image thread, so we can skip
-		# images that arrive too late
-		# img.join()
 		aud.join()
 
 
