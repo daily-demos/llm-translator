@@ -15,15 +15,23 @@ from scenes.translator_scene import TranslatorScene
 
 from threading import Thread
 
+
 class Orchestrator():
-    def __init__(self, daily_client, microphone, ai_tts_service, ai_llm_service, story_id, in_language, out_language):
+    def __init__(
+            self,
+            daily_client,
+            microphone,
+            ai_tts_service,
+            ai_llm_service,
+            story_id,
+            in_language,
+            out_language):
         self.daily_client = daily_client
         self.microphone = microphone
 
         self.ai_tts_service = ai_tts_service
         self.ai_llm_service = ai_llm_service
 
-        
         self.in_language = in_language
         self.out_language = out_language
 
@@ -39,7 +47,8 @@ class Orchestrator():
 
     def request_llm_response(self, message):
         try:
-            msgs = [{"role": "system", "content": f"You will be provided with a sentence in {self.in_language.capitalize()}, and your task is to translate it into {self.out_language.capitalize()}."}, {"role": "user", "content": message['text']}]
+            msgs = [{"role": "system", "content": f"You will be provided with a sentence in {self.in_language.capitalize()}, and your task is to translate it into {self.out_language.capitalize()}."}, {
+                "role": "user", "content": message['text']}]
             message['response'] = self.ai_llm_service.run_llm(msgs)
             self.handle_translation(message)
         except Exception as e:
@@ -53,10 +62,11 @@ class Orchestrator():
             if len(chunk["choices"]) == 0:
                 continue
             if "content" in chunk["choices"][0]["delta"]:
-                if chunk["choices"][0]["delta"]["content"] != {}: #streaming a content chunk
+                if chunk["choices"][0]["delta"]["content"] != {
+                }:  # streaming a content chunk
                     next_chunk = chunk["choices"][0]["delta"]["content"]
                     out += next_chunk
-        #sentence = self.ai_tts_service.run_tts(out)
+        # sentence = self.ai_tts_service.run_tts(out)
         message['translation'] = out
         message['translation_language'] = self.out_language
         self.enqueue(TranslatorScene, message=message)
@@ -67,7 +77,7 @@ class Orchestrator():
                 yield chunk
         except Exception as e:
             print(f"Exception in request_tts: {e}")
-            
+
     def handle_audio(self, audio):
         b = bytearray()
         final = False
@@ -79,7 +89,7 @@ class Orchestrator():
                 if l:
                     self.microphone.write_frames(bytes(b[:l]))
                     b = b[l:]
-        
+
             final = True
             self.microphone.write_frames(bytes(b))
             time.sleep(len(b) / 1600)
@@ -87,7 +97,8 @@ class Orchestrator():
             print(f"Exception in handle_audio: {e}", len(b), final)
 
     def enqueue(self, scene_type, **kwargs):
-        # Take the newly created scene object, call its prepare function, and queue it to perform
+        # Take the newly created scene object, call its prepare function, and
+        # queue it to perform
         kwargs['orchestrator'] = self
         self.scene_queue.put(scene_type(**kwargs))
         pass
@@ -106,9 +117,11 @@ class Orchestrator():
                     break
                 scene = self.scene_queue.get(block=False)
                 if 'sentence' in scene.__dict__:
-                    print(f"🎬 Performing scene: {type(scene).__name__}, {scene.sentence}")
+                    print(
+                        f"🎬 Performing scene: {type(scene).__name__}, {scene.sentence}")
                 else:
-                    print(f"🎬 Performing sentenceless scene: {type(scene).__name__}")
+                    print(
+                        f"🎬 Performing sentenceless scene: {type(scene).__name__}")
                 scene.perform()
             except Empty:
                 time.sleep(0.1)
@@ -117,6 +130,7 @@ class Orchestrator():
 
 if __name__ == "__main__":
     mock_ai_service = MockAIService()
+
     class MockImageSetter():
         def set_image(self, image):
             print("setting image", image)
@@ -125,6 +139,12 @@ if __name__ == "__main__":
         def write_frames(self, frames):
             print("writing frames")
 
-    uim = Orchestrator("context", MockImageSetter(), MockMicrophone(), mock_ai_service, mock_ai_service, mock_ai_service, 0)
+    uim = Orchestrator(
+        "context",
+        MockImageSetter(),
+        MockMicrophone(),
+        mock_ai_service,
+        mock_ai_service,
+        mock_ai_service,
+        0)
     uim.handle_user_speech("hello world")
-
