@@ -14,24 +14,40 @@ class PlayHTAIService(AIService):
 
         self.speech_key = os.getenv("PLAY_HT_KEY") or ''
         self.user_id = os.getenv("PLAY_HT_USER_ID") or ''
-
+        self.speakers = {"male": [], "female": []}
         self.client = Client(
             user_id=self.user_id,
             api_key=self.speech_key,
         )
-        self.options = TTSOptions(
-            voice="s3://voice-cloning-zero-shot/820da3d2-3a3b-42e7-844d-e68db835a206/sarah/manifest.json",
-            sample_rate=16000,
-            quality="higher",
-            format=Format.FORMAT_WAV
-        )
+
+        self.languages = {
+            "english": {"lang": "en-US", "voices": {"male": ["s3://voice-cloning-zero-shot/0b5b2e4b-5103-425e-8aa0-510dd35226e2/mark/manifest.json"], "female": ["s3://voice-cloning-zero-shot/820da3d2-3a3b-42e7-844d-e68db835a206/sarah/manifest.json"]}},
+            "french": {"lang": "fr-FR", "voices": {"male": ["fr-FR-HenriNeural", "fr-FR-AlainNeural"], "female": ["fr-FR-DeniseNeural", "fr-FR-JacquelineNeural"]}},
+            "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}},
+            "japanese": {"lang": "ja-JP", "voices": {"male": ["ja-JP-KeitaNeural", "ja-JP-DaichiNeural"], "female": ["ja-JP-NanamiNeural", "ja-JP-AoiNeural"]}}
+        }
 
     def run_tts(self, message):
         sentence = message['translation']
         language = message['translation_language']
+        voice = message['voice']
+        sid = message['session_id']
+        if not sid in self.speakers[voice]:
+            self.speakers[voice].append(sid)
+        
+        print(f"⌨️ running playHT tts. This should be voice {self.speakers[voice].index(sid) % len(self.speakers[voice])}")
+        options = TTSOptions(
+            voice=self.languages[language]['voices'][voice][self.speakers[voice].index(sid) % len(self.speakers[voice])],
+            sample_rate=16000,
+            quality="higher",
+            format=Format.FORMAT_WAV
+        )
+        print(f"voice should be: {voice}")
+        sentence = message['translation']
+
         b = bytearray()
         in_header = True
-        for chunk in self.client.tts(sentence, self.options):
+        for chunk in self.client.tts(sentence, options):
             # skip the RIFF header.
             if in_header:
                 b.extend(chunk)

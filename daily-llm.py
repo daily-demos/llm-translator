@@ -26,7 +26,7 @@ class DailyLLM(EventHandler):
             out_language="english"
         ):
         
-        self.deepgram_languages = {"spanish": "es", "english": "en"}
+        self.deepgram_languages = {"spanish": "es", "english": "en", "japanese": "ja"}
 
         # room + bot details
         self.room_url = room_url
@@ -80,7 +80,7 @@ class DailyLLM(EventHandler):
         except Exception as e:
             self.print_debug(f"Exception {e}")
         finally:
-            self.client.stop_transcription()
+            #self.client.stop_transcription()
             self.client.leave()
 
         self.stop_threads = True
@@ -130,7 +130,7 @@ class DailyLLM(EventHandler):
         self.print_debug(f"call_joined: {join_data}, {client_error}, deepgram language: {self.deepgram_languages[self.in_language]}")
         #self.client.start_transcription(settings={"language": "es"})
         #self.client.start_transcription(settings={"language": self.deepgram_languages[self.in_language] })
-        self.client.start_transcription()
+        #self.client.start_transcription()
         self.send_languages()
         self.client.send_app_message({"msg": "request-languages"})
         # print(f"Transcription started, hopefully")

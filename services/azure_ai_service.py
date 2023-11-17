@@ -23,7 +23,8 @@ class AzureAIService(AIService):
         self.languages = {
             "english": {"lang": "en-US", "voices": {"male": ["en-US-GuyNeural", "en-US-DavisNeural"], "female": ["en-US-JennyNeural", "en-US-AmberNeural"]}},
             "french": {"lang": "fr-FR", "voices": {"male": ["fr-FR-HenriNeural", "fr-FR-AlainNeural"], "female": ["fr-FR-DeniseNeural", "fr-FR-JacquelineNeural"]}},
-            "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}}
+            "spanish": {"lang": "es-MX", "voices": {"male": ["es-MX-JorgeNeural", "es-MX-LibertoNeural"], "female": ["es-MX-DaliaNeural", "es-MX-LarissaNeural"]}},
+            "japanese": {"lang": "ja-JP", "voices": {"male": ["ja-JP-KeitaNeural", "ja-JP-DaichiNeural"], "female": ["ja-JP-NanamiNeural", "ja-JP-AoiNeural"]}}
         }
         
         
