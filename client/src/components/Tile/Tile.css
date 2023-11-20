@@ -1,0 +1,32 @@
+.tile-video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.self-view {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.no-video {
+  background-color: var(--dark-blue-border);
+}
+
+.no-video video {
+  visibility: hidden;
+}
+
+@media only screen and (max-width: 600px) {
+  .self-view.alone {
+    width: 240px;
+    height: 135px;
+  }
+}
+
+/* Put screen share front and center in our grid when there is one active */
+.tile-screenshare {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
