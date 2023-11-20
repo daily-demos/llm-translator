@@ -1,0 +1,16 @@
+daily-python
+python-dotenv
+imageio-ffmpeg
+imageio
+openai
+python-dotenv
+google-cloud-texttospeech
+azure-cognitiveservices-speech
+algoliasearch
+gunicorn
+flask
+flask-cors
+transformers
+sentencepiece
+algoliasearch
+pyht

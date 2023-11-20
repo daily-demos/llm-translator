@@ -1,0 +1,19 @@
+.subtitle {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  font-size: 14px;
+  width: 100%;
+}
+
+.subtitle p {
+  color: var(--grey);
+  text-align: center;
+}
+
+.subtitle p span {
+  padding: 0.2em 0.5em;
+
+  background-color: var(--dark-blue);
+}
