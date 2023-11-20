@@ -19,7 +19,7 @@ Then, copy `.env.example` to `.env` and add your keys, as well as the URL of the
 
 Next, run `python daily-llm.py -i spanish -o english` to start a Spanish-to-English translator.
 
-There's currently a bug preventing `daily-python` from starting translation in languages other than English, so you'll need to start transcription yourself directly in the browser for now. You can do that by running `callObject.startTranscription({"language": "es"});` in a call client with an owner token.
+There's currently a bug preventing `daily-python` from starting transcription in languages other than English, so you'll need to start transcription yourself directly in the browser for now. You can do that by running `callObject.startTranscription({"language": "es"});` in a call client with an owner token.
 
 ## Running the client
 
