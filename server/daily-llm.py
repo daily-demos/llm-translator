@@ -40,8 +40,9 @@ class DailyLLM(EventHandler):
         if token:
             self.token = token
         else:
+            token_expiry = time.time() + 600
             self.token = get_meeting_token(
-                room_name, os.getenv("DAILY_API_KEY"))
+                room_name, os.getenv("DAILY_API_KEY"), token_expiry)
 
         # hard-coding this so clients can find translators
         self.bot_name = f"tb-{self.in_language}-{self.out_language}"

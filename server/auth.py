@@ -9,7 +9,7 @@ import os
 load_dotenv()
 
 
-def get_meeting_token(room_name, daily_api_key, token_expiry):
+def get_meeting_token(room_name, daily_api_key, token_expiry=None):
     api_path = os.getenv('DAILY_API_PATH') or 'https://api.daily.co/v1'
 
     if not token_expiry:
